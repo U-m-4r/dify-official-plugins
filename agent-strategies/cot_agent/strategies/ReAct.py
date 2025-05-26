@@ -498,10 +498,12 @@ class ReActAgentStrategy(AgentStrategy):
 
         return result, tool_invoke_parameters
 
-    def _convert_dict_to_action(self, action: dict) -> AgentScratchpadUnit.Action:
+    def _convert_dict_to_action(self, action: dict[str, Any]) -> AgentScratchpadUnit.Action:
         """
-        convert dict to action
+        Convert a dictionary to an AgentScratchpadUnit.Action.
         """
+        if "action" not in action or "action_input" not in action:
+            raise ValueError("Action dictionary must contain 'action' and 'action_input' keys.")
         return AgentScratchpadUnit.Action(
             action_name=action["action"], action_input=action["action_input"]
         )
@@ -510,17 +512,16 @@ class ReActAgentStrategy(AgentStrategy):
         self, agent_scratchpad: list[AgentScratchpadUnit]
     ) -> str:
         """
-        format assistant message
+        Format the assistant's message from the agent scratchpad.
         """
-        message = ""
+        parts = []
         for scratchpad in agent_scratchpad:
             if scratchpad.is_final():
-                message += f"Final Answer: {scratchpad.agent_response}"
+                parts.append(f"Final Answer: {scratchpad.agent_response}")
             else:
-                message += f"Thought: {scratchpad.thought}\n\n"
+                parts.append(f"Thought: {scratchpad.thought}")
                 if scratchpad.action_str:
-                    message += f"Action: {scratchpad.action_str}\n\n"
+                    parts.append(f"Action: {scratchpad.action_str}")
                 if scratchpad.observation:
-                    message += f"Observation: {scratchpad.observation}\n\n"
-
-        return message
+                    parts.append(f"Observation: {scratchpad.observation}")
+        return "\n\n".join(parts)
